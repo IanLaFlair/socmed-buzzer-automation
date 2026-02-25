@@ -1,0 +1,80 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id                  String         @id
+  tiktokUsername      String         @map("tiktok_username")
+  gologinProfileId    String?        @map("gologin_profile_id")
+  status              String         @default("available")
+  proxyConfig         Json?          @map("proxy_config")
+  lastUsedAt          DateTime?      @map("last_used_at")
+  cooldownUntil       DateTime?      @map("cooldown_until")
+  totalComments       Int            @default(0) @map("total_comments")
+  successRate         Decimal        @default(100.00) @map("success_rate") @db.Decimal(5, 2)
+  createdAt           DateTime       @default(now()) @map("created_at")
+  updatedAt           DateTime       @updatedAt @map("updated_at")
+  browserProvider     String         @default("gologin") @map("browser_provider")
+  multiloginProfileId String?        @map("multilogin_profile_id")
+  comments            Comment[]
+  executionLogs       ExecutionLog[]
+
+  @@map("accounts")
+}
+
+model Job {
+  id                String    @id
+  videoUrl          String    @map("video_url")
+  status            String    @default("queued")
+  totalComments     Int       @map("total_comments")
+  completedComments Int       @default(0) @map("completed_comments")
+  failedComments    Int       @default(0) @map("failed_comments")
+  config            Json?
+  callbackUrl       String?   @map("callback_url")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+  comments          Comment[]
+
+  @@map("jobs")
+}
+
+model Comment {
+  id              String         @id
+  jobId           String         @map("job_id")
+  externalId      String?        @map("external_id")
+  text            String
+  status          String         @default("pending")
+  accountId       String?        @map("account_id")
+  delaySeconds    Int            @default(0) @map("delay_seconds")
+  retryCount      Int            @default(0) @map("retry_count")
+  errorMessage    String?        @map("error_message")
+  executedAt      DateTime?      @map("executed_at")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  replyToUsername String?        @map("reply_to_username")
+  account         Account?       @relation(fields: [accountId], references: [id])
+  job             Job            @relation(fields: [jobId], references: [id])
+  executionLogs   ExecutionLog[]
+
+  @@map("comments")
+}
+
+model ExecutionLog {
+  id            Int      @id @default(autoincrement())
+  commentId     String   @map("comment_id")
+  accountId     String   @map("account_id")
+  action        String
+  status        String
+  errorMessage  String?  @map("error_message")
+  screenshotUrl String?  @map("screenshot_url")
+  durationMs    Int?     @map("duration_ms")
+  createdAt     DateTime @default(now()) @map("created_at")
+  account       Account  @relation(fields: [accountId], references: [id])
+  comment       Comment  @relation(fields: [commentId], references: [id])
+
+  @@map("execution_logs")
+}
