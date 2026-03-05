@@ -40,7 +40,6 @@ export async function accountsRoutes(fastify: FastifyInstance) {
     // Supports both GoLogin and Multilogin
     fastify.post('/accounts', async (request, reply) => {
         const body = request.body as {
-            id: string;
             tiktok_username: string;
             browser_provider?: 'gologin' | 'multilogin';  // default: gologin
             gologin_profile_id?: string;
@@ -65,9 +64,12 @@ export async function accountsRoutes(fastify: FastifyInstance) {
             });
         }
 
+        const { nanoid } = await import('nanoid');
+        const generatedId = `acc_${nanoid(10)}`;
+
         const account = await prisma.account.create({
             data: {
-                id: body.id,
+                id: generatedId,
                 tiktokUsername: body.tiktok_username,
                 browserProvider: provider,
                 gologinProfileId: body.gologin_profile_id || null,
@@ -86,7 +88,6 @@ export async function accountsRoutes(fastify: FastifyInstance) {
             },
         };
     });
-
 
     // DELETE /api/v1/accounts/:id - Delete single account
     fastify.delete('/accounts/:id', async (request, reply) => {

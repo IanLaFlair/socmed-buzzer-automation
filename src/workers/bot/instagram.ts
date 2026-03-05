@@ -80,7 +80,12 @@ export async function executeInstagramComment(params: ExecuteCommentParams): Pro
                 console.log('🎥 Reels detected, ensuring comment drawer is open...');
                 const inputVisible = await page.$('textarea, form textarea');
                 if (!inputVisible) {
-                    await commentIcon.evaluate(e => (e.closest('button') as HTMLElement)?.click() || (e.closest('div[role="button"]') as HTMLElement)?.click());
+                    await commentIcon.evaluate(e => {
+                        const btn = e.closest('button') as HTMLElement | null;
+                        const divBtn = e.closest('div[role="button"]') as HTMLElement | null;
+                        if (btn) btn.click();
+                        else if (divBtn) divBtn.click();
+                    });
                     await randomDelay(2000, 3000);
                 }
             }
@@ -213,7 +218,12 @@ async function findInstagramReplyButton(page: Page, targetUsername: string) {
         if (commentIcon) {
             const inputVisible = await page.$('textarea, form textarea');
             if (!inputVisible) {
-                await commentIcon.evaluate(e => (e.closest('button') as HTMLElement)?.click() || (e.closest('div[role="button"]') as HTMLElement)?.click());
+                await commentIcon.evaluate(e => {
+                    const btn = e.closest('button') as HTMLElement | null;
+                    const divBtn = e.closest('div[role="button"]') as HTMLElement | null;
+                    if (btn) btn.click();
+                    else if (divBtn) divBtn.click();
+                });
                 await randomDelay(2000, 3000);
             }
         }
@@ -228,7 +238,7 @@ async function findInstagramReplyButton(page: Page, targetUsername: string) {
         const scrolled = await page.evaluate((username) => {
             const allElements = Array.from(document.querySelectorAll('*'));
             const matches = allElements.filter(el => {
-                const text = el.innerText || '';
+                const text = (el as HTMLElement).innerText || '';
                 return text.length < 100 && text.toLowerCase().includes(username.toLowerCase());
             });
 
@@ -249,7 +259,7 @@ async function findInstagramReplyButton(page: Page, targetUsername: string) {
             const coords = await page.evaluate((username) => {
                 const allElements = Array.from(document.querySelectorAll('*'));
                 const matches = allElements.filter(el => {
-                    const text = el.innerText || '';
+                    const text = (el as HTMLElement).innerText || '';
                     return text.length < 100 && text.toLowerCase().includes(username.toLowerCase());
                 });
 
