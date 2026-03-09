@@ -1,4 +1,6 @@
 import puppeteer, { Page, Browser, ElementHandle } from 'puppeteer-core';
+import { tmpdir } from 'os';
+import path from 'path';
 import { BrowserProfile, BrowserSession, startBrowserProfile, stopBrowserSession } from './browser-provider.js';
 
 interface ExecuteCommentParams {
@@ -76,15 +78,19 @@ export async function executeInstagramComment(params: ExecuteCommentParams): Pro
         } else {
             // STANDARD: Ensure drawer is open
             const commentIcon = await page.$('svg[aria-label="Comment"], svg[aria-label="Komentar"]');
-            if (videoUrl.includes('/reel') && commentIcon) {
-                console.log('🎥 Reels detected, ensuring comment drawer is open...');
-                const inputVisible = await page.$('textarea, form textarea');
+            if (commentIcon) {
+                console.log('🎥 Comment icon detected, ensuring comment drawer is open...');
+                const inputVisible = await page.evaluate(() => {
+                    const el = document.querySelector('textarea, form textarea') as HTMLElement;
+                    return el && el.offsetParent !== null;
+                });
                 if (!inputVisible) {
                     await commentIcon.evaluate(e => {
                         const btn = e.closest('button') as HTMLElement | null;
                         const divBtn = e.closest('div[role="button"]') as HTMLElement | null;
                         if (btn) btn.click();
                         else if (divBtn) divBtn.click();
+                        else (e as any).click();
                     });
                     await randomDelay(2000, 3000);
                 }
@@ -357,9 +363,9 @@ async function findInstagramReplyButton(page: Page, targetUsername: string) {
 
 async function takeScreenshot(page: Page, name: string): Promise<void> {
     try {
-        const path = `/tmp/ig-${name}-${Date.now()}.png`;
-        await page.screenshot({ path, fullPage: false });
-        console.log(`📸 ${path}`);
+        const filePath = path.join(tmpdir(), `ig-${name}-${Date.now()}.png`);
+        await page.screenshot({ path: filePath, fullPage: false });
+        console.log(`📸 ${filePath}`);
     } catch { }
 }
 

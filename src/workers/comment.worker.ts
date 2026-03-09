@@ -171,7 +171,15 @@ async function processCommentJob(job: Job<JobData>) {
             // Release Account if it was assigned
             const accountId = (await prisma.comment.findUnique({ where: { id: comment.id } }))?.accountId;
             if (accountId) {
-                await prisma.account.update({ where: { id: accountId }, data: { status: 'available' } }).catch(() => { });
+                const cooldown = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes cooldown
+                await prisma.account.update({
+                    where: { id: accountId },
+                    data: {
+                        status: 'available',
+                        lastUsedAt: new Date(),
+                        cooldownUntil: cooldown,
+                    }
+                }).catch(() => { });
             }
         }
     });
